@@ -113,6 +113,11 @@ public class PlayerState
         //_playerInitInfo.Pose.t.y = 733f;
         //_playerInitInfo.Pose.t.z = 144.0f; // height
 
+        ////spawn location for tutorial area 396.09283,451.92123,1083.5122
+        //_playerInitInfo.Pose.t.x = 396.09283f;
+        //_playerInitInfo.Pose.t.y = 451.92123f;
+        //_playerInitInfo.Pose.t.z = 1083.5122f; // height
+
         _playerInitInfo.Pose.q.v.x = 10;
         _playerInitInfo.Pose.q.v.y = 10;
         _playerInitInfo.Pose.q.v.z = 10;
