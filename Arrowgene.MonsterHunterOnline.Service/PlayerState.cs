@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.SqlTypes;
 using System.IO;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -408,7 +409,7 @@ public class PlayerState
         }
         if (chatMessage.Message == "print")
         {
-            string csvFile = "output.csv";
+            string csvFile = "leveldata.csv";
             string desiredDirectory = Path.Combine(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.Parent.Parent.Parent.FullName);
             string filePath = Path.Combine(desiredDirectory, csvFile);
             string trigger = "Teleport_To_Cat_Area";
@@ -542,119 +543,226 @@ public class PlayerState
     /// </summary>
     public void OnChangeTownInstance(CSChangeTownInstanceReq req)
     {
-        string fileName = "stage.txt";
-        string csvFile = "output.csv";
+        string missionFile = "mission0.csv";
+        string csvFile = "leveldata.csv";
         string desiredDirectory = Path.Combine(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.Parent.Parent.Parent.FullName);
-        string filePath = Path.Combine(desiredDirectory, fileName);
         string csvPath = Path.Combine(desiredDirectory, csvFile);
-        int level;
-
-        try
+        string missionPath = Path.Combine(desiredDirectory, missionFile);
+        int level = req.LevelId;
+        if (level == 0)
         {
-            using (StreamReader sr = new StreamReader(filePath))
+            level = _instanceInitInfo.LevelID;
+        }
+        string triggerName = (req.trigger_name).Trim(' ', '\t', '\u00A0', '\x00');
+        if (triggerName.Length < 5)
+        {
+            triggerName = req.dstpoint;
+        }
+
+        if (triggerName.Length > 5)
+        {
+            using (TextFieldParser parser = new TextFieldParser(csvPath))
             {
-                string firstLine = sr.ReadLine();
-                Logger.Info($"Stage ID Found: ({firstLine}, {filePath})");
-                if (int.TryParse(firstLine, out int number))
+                string level_comp = level.ToString();
+                parser.TextFieldType = FieldType.Delimited;
+                parser.SetDelimiters(",");
+
+                // Skip the header line
+                parser.ReadLine();
+                while (!parser.EndOfData)
                 {
-                    level = number;
+                    string[] fields = parser.ReadFields();
+                    string levelId = fields[0];
+                    bool isMatch = !string.IsNullOrEmpty(levelId) &&
+                        !string.IsNullOrEmpty(level_comp) &&
+                        (level_comp.Contains(levelId) || levelId.Contains(level_comp));
+                    if (isMatch)
+                    {
+                        string filename = fields[1];
+                        string areaName = fields[2];
+                        string name = fields[3].Trim();
+                        string pos = fields[4];
+                        string rotate = fields[5];
+                        
+                        if (name.Contains(triggerName) || triggerName.Contains(name))
+                        {
+                            Logger.Info($"warp point match found: ({levelId})({filename})({areaName})({name})");
+                            // Process the position (Pos) and rotation (Rotate) values
+                            string[] posValues = pos.Split(',');
+                            string[] rotateValues = rotate.Split(',');
+
+                            float posX = float.Parse(posValues[0]);
+                            float posY = float.Parse(posValues[1]);
+                            float posZ = float.Parse(posValues[2]);
+
+                            float rotateX = float.Parse(rotateValues[0]);
+                            float rotateY = float.Parse(rotateValues[1]);
+                            float rotateZ = float.Parse(rotateValues[2]);
+                            float rotateW = float.Parse(rotateValues[3]);
+
+
+                            CSQuatT TargetPosition = new CSQuatT()
+                            {
+
+                                q = new CSQuat()
+                                {
+                                    v = new CSVec3() { x = rotateX, y = rotateY, z = rotateZ },
+                                    w = rotateW
+                                },
+                                t = new CSVec3() { x = posX, y = posY, z = posZ }
+                            };
+                            _client.SendCsPacket(NewCsPacket.ChangeTownInstanceRsp(new CSChangeTownInstanceRsp()
+                            {
+                                ErrCode = 0,
+
+                                LevelID = level,
+                            }));
+
+                            _client.SendCsPacket(NewCsPacket.PlayerTeleport(new CSPlayerTeleport()
+                            {
+                                SyncTime = 1,
+                                NetObjId = 1,
+                                Region = 1,
+                                TargetPos = TargetPosition,
+                                ParentGUID = 1,
+                                InitState = 1
+                            }));
+                            //  TODO req tells us spawn position name, the coordinates should be in levels/xx/mission .xml 
+                            
+                            _instanceInitInfo.LevelID = level;
+                            SendTownServerInitNtf();
+                            return;
+                        }
+                    }
                 }
-                else
+                Logger.Error($"Warp point not found {req.trigger_name}, {req.LevelId}, {req.dstpoint}");
+            }
+            using (TextFieldParser parser = new TextFieldParser(missionPath))
+            {
+                string level_comp = level.ToString();
+                parser.TextFieldType = FieldType.Delimited;
+                parser.SetDelimiters(",");
+
+                // Skip the header line
+                parser.ReadLine();
+                while (!parser.EndOfData)
                 {
-                    level = req.LevelId;
+                    string[] fields = parser.ReadFields();
+                    string levelId = fields[0];
+                    bool isMatch = !string.IsNullOrEmpty(levelId) &&
+                        !string.IsNullOrEmpty(level_comp) &&
+                        (level_comp.Contains(levelId) || levelId.Contains(level_comp));
+                    if (isMatch)
+                    {
+                        string filename = fields[1];
+                        string areaName = fields[2];
+                        string name = fields[3];
+                        string pos = fields[4];
+                        string rotate = fields[5];
+                        if (!string.IsNullOrEmpty(fields[6]))
+                        {
+                            level = int.Parse(fields[6]);
+                        }
+                        Logger.Info($"{level_comp}, {levelId}, {name.Contains(triggerName) || triggerName.Contains(name)}");
+                        Logger.Error($"stage match found: ({levelId})({filename})({areaName})({name})");
+                        if (name.Contains(triggerName) || triggerName.Contains(name))
+                        {
+                            Logger.Info($"warp point match found!");
+                            // Process the position (Pos) and rotation (Rotate) values
+                            string[] posValues = pos.Split(',');
+                            string[] rotateValues = rotate.Split(',');
+
+                            float posX = float.Parse(posValues[0]);
+                            float posY = float.Parse(posValues[1]);
+                            float posZ = float.Parse(posValues[2]);
+
+                            float rotateX = float.Parse(rotateValues[0]);
+                            float rotateY = float.Parse(rotateValues[1]);
+                            float rotateZ = float.Parse(rotateValues[2]);
+                            float rotateW = float.Parse(rotateValues[3]);
+
+
+                            CSQuatT TargetPosition = new CSQuatT()
+                            {
+
+                                q = new CSQuat()
+                                {
+                                    v = new CSVec3() { x = rotateX, y = rotateY, z = rotateZ },
+                                    w = rotateW
+                                },
+                                t = new CSVec3() { x = posX, y = posY, z = posZ }
+                            };
+                            _client.SendCsPacket(NewCsPacket.ChangeTownInstanceRsp(new CSChangeTownInstanceRsp()
+                            {
+                                ErrCode = 0,
+
+                                LevelID = level,
+                            }));
+
+                            _client.SendCsPacket(NewCsPacket.PlayerTeleport(new CSPlayerTeleport()
+                            {
+                                SyncTime = 1,
+                                NetObjId = 1,
+                                Region = 1,
+                                TargetPos = TargetPosition,
+                                ParentGUID = 1,
+                                InitState = 1
+                            }));
+                            //  TODO req tells us spawn position name, the coordinates should be in levels/xx/mission .xml 
+
+                            _instanceInitInfo.LevelID = level;
+                            SendTownServerInitNtf();
+                            return;
+                        }
+                    }
                 }
             }
-        }
-        catch (Exception e)
-        {
-            level = req.LevelId;
-            Console.WriteLine("An error occurred while reading the file: " + e.Message);
-            Logger.Error($"File Not Found Using Default: ({level})");
 
         }
-
-        string levelIdToSearch = level.ToString("D6") + ";"; // LevelID to search for
-
-        // Read the CSV file
-        List<string[]> csvData = new List<string[]>();
-
-        using (StreamReader reader = new StreamReader(csvPath))
+        else
         {
-            string line;
-            while ((line = reader.ReadLine()) != null)
+            _client.SendCsPacket(NewCsPacket.PlayerTeleport(new CSPlayerTeleport()
             {
-                string[] row = line.Split(',');
-                csvData.Add(row);
-            }
-        }
-
-        // Filter the rows with the desired levelId
-        List<string[]> filteredData = new List<string[]>();
-
-        foreach (string[] row in csvData)
-        {
-            if (row[0] == levelIdToSearch)
-            {
-                filteredData.Add(row);
-            }
-        }
-
-        // Pick a random row from the filtered data
-        Random random = new Random();
-        int randomIndex = random.Next(filteredData.Count);
-        string[] randomRow = filteredData[randomIndex];
-
-        // Extract the position (Pos) values as xyz floats
-        string posValue = randomRow[4] + "," + randomRow[5] + "," + randomRow[6];
-        string[] posCoordinates = posValue.Replace("\"", "").Split(',');
-
-        float posX = float.Parse(posCoordinates[0].Trim());
-        float posY = float.Parse(posCoordinates[1].Trim());
-        float posZ = float.Parse(posCoordinates[2].Trim());
-        //Logger.Info($"Setting new spawn coords ID Coordinates Found in File: ({csvPath}");
-        //Logger.Info($"Stage ID Coordinates Found in File: ({float.Parse(posCoordinates[0].Trim())}");
-        Logger.Info($"Random row with levelId {levelIdToSearch}:");
-        Logger.Info($"Name: {randomRow[3]}");
-        Logger.Info($"Position (xyz): {posX}, {posY}, {posZ}");
-        //Logger.Info($"Stage ID Coordinates Found: ({float.Parse(posCoordinates[0])}");
-
-        _client.SendCsPacket(NewCsPacket.PlayerTeleport(new CSPlayerTeleport()
-        {
-            SyncTime = 1,
-            NetObjId = 1,
-            Region = 1,
-            TargetPos = new CSQuatT()
-            {
-                q = new CSQuat()
+                SyncTime = 1,
+                NetObjId = 1,
+                Region = 1,
+                TargetPos = new CSQuatT()
                 {
-                    v = new CSVec3() { x = 200.0f, y = 200.0f, z = 200.0f },
-                    w = 0.0f
+                    q = new CSQuat()
+                    {
+                        v = new CSVec3() { x = 200.0f, y = 200.0f, z = 200.0f },
+                        w = 0.0f
+                    },
+                    t = new CSVec3() { x = 400f, y = 400f, z = 400f }
                 },
-                t = new CSVec3() { x = posX, y = posY, z = posZ }
-            },
-            ParentGUID = 1,
-            InitState = 1
-        }));
+                ParentGUID = 1,
+                InitState = 1
+            }));
 
-        //  TODO req tells us spawn position name, the coordinates should be in levels/xx/mission .xml 
-        _client.SendCsPacket(NewCsPacket.ChangeTownInstanceRsp(new CSChangeTownInstanceRsp()
-        {
-            ErrCode = 0,
+            //  TODO req tells us spawn position name, the coordinates should be in levels/xx/mission .xml 
+            _client.SendCsPacket(NewCsPacket.ChangeTownInstanceRsp(new CSChangeTownInstanceRsp()
+            {
+                ErrCode = 0,
 
-            LevelID = level,
-        }));
-        _instanceInitInfo.LevelID = level;
-        SendTownServerInitNtf();
+                LevelID = level,
+            }));
+            _instanceInitInfo.LevelID = level;
+            SendTownServerInitNtf();
+            return;
+        }
     }
 
     public void OnPlayerRegionJumpReq(CSPlayerRegionJumpReq req)
     {
         Logger.Info($"Triggered");
         CSVec3 coords = req.PlayerPos;
-        string trigger = req.TriggerName;
-        Logger.Info($"Teleport Info: ({trigger})");
+        string triggerName = (req.TriggerName).Trim(' ', '\t', '\u00A0', '\x00');
+        Logger.Info($"Teleport Info: ({triggerName})");
+
+        triggerName = triggerName.Replace("MainArea", "MainArea".Insert("MainArea".IndexOf("Main") + 4, "_"));
+
         string instanceLevelId = _instanceInitInfo.LevelID.ToString();
-        string csvFile = "output.csv";
+        string csvFile = "leveldata.csv";
         string desiredDirectory = Path.Combine(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.Parent.Parent.Parent.FullName);
         string filePath = Path.Combine(desiredDirectory, csvFile);
 
@@ -665,10 +773,8 @@ public class PlayerState
 
             // Skip the header line
             parser.ReadLine();
-            Logger.Info($"File Line: ({trigger})");
             while (!parser.EndOfData)
             {
-                Logger.Info($"In while loop");
                 string[] fields = parser.ReadFields();
                 string levelId = fields[0];
                 bool isMatch = !string.IsNullOrEmpty(levelId) &&
@@ -676,15 +782,14 @@ public class PlayerState
                     (instanceLevelId.Contains(levelId) || levelId.Contains(instanceLevelId));
                 if (isMatch)
                 {
-                    Logger.Info($"found a match!");
                     string filename = fields[1];
                     string areaName = fields[2];
-                    string name = fields[3];
+                    string name = fields[3].Trim();
                     string pos = fields[4];
                     string rotate = fields[5];
+                    Logger.Error($"warp names: ({triggerName}) ({name}), {name.Contains(triggerName) || triggerName.Contains(name)}");
                     Logger.Error($"stage match found: ({levelId})({filename})({areaName})({name})");
-                    Logger.Info($"contains? {name.Contains(trigger)}");
-                    if (name.Contains(trigger))
+                    if (name.Contains(triggerName) || triggerName.Contains(name))
                     {
                         Logger.Info($"warp point match found!");
                         // Process the position (Pos) and rotation (Rotate) values
