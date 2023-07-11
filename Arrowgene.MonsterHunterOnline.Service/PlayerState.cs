@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.IO;
 using System.Reflection;
 using System.Threading;
@@ -563,6 +564,24 @@ public class PlayerState
         _teamInfoNtf.Team.TownSvr = 1;
         _teamInfoNtf.Team.BattleSvr = 1;
         _teamInfoNtf.Team.Members.Add(_TeamMemberInfo);
+    }
+
+    ///Function to buy items from shop <summary>
+    public void OnNpcShopBuyItemReq(CSNpcShopBuyItemReq req)
+    {
+        int ShopId = req.ShopId;
+        int SaleItemId = req.SaleItemId;
+        int Count = req.Count;
+        int Column = req.Column;
+        int Grid = req.Grid;
+        int isUnifiedNpcStore = req.isUnifiedNpcStore;
+        _client.SendCsPacket(NewCsPacket.NpcShopBuyItemRsp(new CSNpcShopBuyItemRsp()
+        {
+            Ret = 0,
+            ShopId = ShopId,
+            SaleId = SaleItemId,
+            Num = Count
+    }));
     }
 
     public void OnChatMsg(ChatMessage chatMessage)
