@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
+using System.Reflection.Emit;
+using System.Security.Cryptography.Xml;
 using System.Threading;
 using Arrowgene.Buffers;
 using Arrowgene.Logging;
@@ -9,7 +12,7 @@ using Arrowgene.MonsterHunterOnline.Service.CsProto.Core;
 using Arrowgene.MonsterHunterOnline.Service.CsProto.Enums;
 using Arrowgene.MonsterHunterOnline.Service.CsProto.Structures;
 using Arrowgene.MonsterHunterOnline.Service.System.Chat;
-using Arrowgene.MonsterHunterOnline.Service.Tdr;
+using Microsoft.VisualBasic.FileIO;
 
 namespace Arrowgene.MonsterHunterOnline.Service;
 
@@ -45,7 +48,7 @@ public class PlayerState
 
     public PlayerState(Client client)
     {
-        LevelId = 150301;
+        LevelId = 150101;
 
         _client = client;
         _roleBaseInfo = new CSRoleBaseInfo();
@@ -100,10 +103,14 @@ public class PlayerState
         _playerInitInfo.PvpPrepareStageState = 0;
         _playerInitInfo.ServerTime = 100;
 
-        //spawn location
-        _playerInitInfo.Pose.t.x = 409.91379f;
-        _playerInitInfo.Pose.t.y = 358.74976f;
-        _playerInitInfo.Pose.t.z = 100.0f; // height
+        //spawn location for cinnamon 394.02637,370.45035,88.174324
+        _playerInitInfo.Pose.t.x = 394.02637f;
+        _playerInitInfo.Pose.t.y = 370.45035f;
+        _playerInitInfo.Pose.t.z = 88.174324f; // height
+        //spawn location for milard
+        //_playerInitInfo.Pose.t.x = 668f;
+        //_playerInitInfo.Pose.t.y = 733f;
+        //_playerInitInfo.Pose.t.z = 144.0f; // height
 
         _playerInitInfo.Pose.q.v.x = 10;
         _playerInitInfo.Pose.q.v.y = 10;
@@ -117,286 +124,58 @@ public class PlayerState
 
         _playerInitInfo.Weapon = 1;
 
-        //   for (int i = 1; i < 40; i++)
-        //   {
-        //       _playerInitInfo.EquipItem.Add((byte)i);
-        //       _playerInitInfo.Attr.Add((byte)i);
-        //       _playerInitInfo.BagItem.Add((byte)i);
-        //       _playerInitInfo.StoreItem.Add((byte)i);
-        //       _playerInitInfo.Buff.Add((byte)i);
-        //       _playerInitInfo.Skill.Add((byte)i);
-        //       _playerInitInfo.CD.Add((byte)i);
-        //       _playerInitInfo.Star.Add((byte)i);
-        //       _playerInitInfo.FacialInfo[i] = (byte)i;
-        //       _playerInitInfo.Spoor.Add((byte)i);
-        //   }
-
+        for (int i = 1; i < 40; i++)
+        {
+            _playerInitInfo.EquipItem.Add((byte)i);
+            _playerInitInfo.Attr.Add((byte)i);
+            _playerInitInfo.BagItem.Add((byte)i);
+            _playerInitInfo.StoreItem.Add((byte)i);
+            _playerInitInfo.Buff.Add((byte)i);
+            _playerInitInfo.Skill.Add((byte)i);
+            _playerInitInfo.CD.Add((byte)i);
+            _playerInitInfo.Star.Add((byte)i);
+            _playerInitInfo.FacialInfo[i] = (byte)i;
+            _playerInitInfo.Spoor.Add((byte)i);
+        }
 
         StreamBuffer ast = new StreamBuffer();
-        ast.WriteByte((byte)TdrTlvMagic.NoVariant);
-
-        int sizePos = ast.Position;
-        ast.WriteInt32(0, Endianness.Big); // size
-        
-        // case 0
-        uint tag = TdrTlv.MakeTag(2, TdrTlvType.ID_4_BYTE);
-        TdrBuffer.WriteVarUInt32(ast, tag);
-        ast.WriteInt32(7 * 4, Endianness.Big); // size, max 7*4
-        for (int i = 0; i < 7; i++)
-        {
-            ast.WriteInt32(10, Endianness.Big);
-        }
-        
-        // case 1
-        // skips X bytes
-        tag = TdrTlv.MakeTag(3, TdrTlvType.ID_4_BYTE);
-        TdrBuffer.WriteVarUInt32(ast, tag);
-        ast.WriteInt32(20, Endianness.Big); 
-        
-        // case 2
-        // read int32
-        tag = TdrTlv.MakeTag(4, TdrTlvType.ID_4_BYTE);
-        TdrBuffer.WriteVarUInt32(ast, tag);
+        ast.WriteUInt32(1, Endianness.Big); //attr id
+        ast.WriteUInt16(1, Endianness.Big); //attr type = CS_ATTR_DATA_BASE
+        ast.WriteUInt16(1, Endianness.Big); //attr type (CS_PROP_SYNC_TYPE) = CS_PROP_SYNC_INT
         ast.WriteInt32(20, Endianness.Big);
-        
-                
-        // case 3
-        // read int32
-        tag = TdrTlv.MakeTag(5, TdrTlvType.ID_4_BYTE);
-        TdrBuffer.WriteVarUInt32(ast, tag);
-        ast.WriteInt32(20, Endianness.Big);
-        
-                
-        // case 4
-        // read int32
-        tag = TdrTlv.MakeTag(6, TdrTlvType.ID_4_BYTE);
-        TdrBuffer.WriteVarUInt32(ast, tag);
-        ast.WriteInt32(20, Endianness.Big);
-        
-                
-        // case 5
-        // read int32
-        tag = TdrTlv.MakeTag(7, TdrTlvType.ID_4_BYTE);
-        TdrBuffer.WriteVarUInt32(ast, tag);
-        ast.WriteInt32(20, Endianness.Big);
-        
-                
-        // case 6
-        // read int32
-        tag = TdrTlv.MakeTag(8, TdrTlvType.ID_4_BYTE);
-        TdrBuffer.WriteVarUInt32(ast, tag);
-        ast.WriteInt32(20, Endianness.Big);
-        
-                
-        // case 7
-        // read int32
-        tag = TdrTlv.MakeTag(9, TdrTlvType.ID_4_BYTE);
-        TdrBuffer.WriteVarUInt32(ast, tag);
-        ast.WriteInt32(20, Endianness.Big);
-        
-                
-        // case 8
-        // read int32
-        tag = TdrTlv.MakeTag(10, TdrTlvType.ID_4_BYTE);
-        TdrBuffer.WriteVarUInt32(ast, tag);
-        ast.WriteInt32(20, Endianness.Big);
-        
-                
-        // case 9
-        // read int32
-        tag = TdrTlv.MakeTag(11, TdrTlvType.ID_4_BYTE);
-        TdrBuffer.WriteVarUInt32(ast, tag);
-        ast.WriteInt32(20, Endianness.Big);
-        
-        // case 10
-        // read int32
-        tag = TdrTlv.MakeTag(12, TdrTlvType.ID_4_BYTE);
-        TdrBuffer.WriteVarUInt32(ast, tag);
-        ast.WriteInt32(20, Endianness.Big);
-        
-        // case 11
-        // read int32
-        tag = TdrTlv.MakeTag(13, TdrTlvType.ID_4_BYTE);
-        TdrBuffer.WriteVarUInt32(ast, tag);
-        ast.WriteInt32(20, Endianness.Big);
-        
-        // case 12
-        // read int32
-        tag = TdrTlv.MakeTag(14, TdrTlvType.ID_4_BYTE);
-        TdrBuffer.WriteVarUInt32(ast, tag);
-        ast.WriteInt32(20, Endianness.Big);
-        
-        // case 13
-        // read int32
-        tag = TdrTlv.MakeTag(15, TdrTlvType.ID_4_BYTE);
-        TdrBuffer.WriteVarUInt32(ast, tag);
-        ast.WriteInt32(20, Endianness.Big);
-        
-        // case 14
-        // read int32
-        tag = TdrTlv.MakeTag(16, TdrTlvType.ID_4_BYTE);
-        TdrBuffer.WriteVarUInt32(ast, tag);
-        ast.WriteInt32(20, Endianness.Big);
-        
-        // case 15
-        // read int32
-        tag = TdrTlv.MakeTag(17, TdrTlvType.ID_4_BYTE);
-        TdrBuffer.WriteVarUInt32(ast, tag);
-        ast.WriteInt32(7 * 4, Endianness.Big); // size, max 7*4
-        for (int i = 0; i < 7; i++)
-        {
-            ast.WriteInt32(10, Endianness.Big);
-        }
-        
-        // case 16 - 0x10
-        // read int32
-        tag = TdrTlv.MakeTag(18, TdrTlvType.ID_4_BYTE);
-        TdrBuffer.WriteVarUInt32(ast, tag);
-        ast.WriteInt32(7 * 4, Endianness.Big); // size, max 7*4
-        for (int i = 0; i < 7; i++)
-        {
-            ast.WriteInt32(10, Endianness.Big);
-        }
-        
-        // case 17 - 0x10
-        tag = TdrTlv.MakeTag(19, TdrTlvType.ID_4_BYTE);
-        TdrBuffer.WriteVarUInt32(ast, tag);
-        ast.WriteInt32(7 * 4, Endianness.Big); // size, max 7*4
-        for (int i = 0; i < 7; i++)
-        {
-            ast.WriteInt32(10, Endianness.Big);
-        }
-        
-        // case 18 - 0x11
-        tag = TdrTlv.MakeTag(20, TdrTlvType.ID_4_BYTE);
-        TdrBuffer.WriteVarUInt32(ast, tag);
-        ast.WriteInt32(7 * 4, Endianness.Big); // size, max 7*4
-        for (int i = 0; i < 7; i++)
-        {
-            ast.WriteInt32(10, Endianness.Big);
-        }
-        
-        // case 19 - 0x12
-        tag = TdrTlv.MakeTag(21, TdrTlvType.ID_2_BYTE);
-        TdrBuffer.WriteVarUInt32(ast, tag);
-        ast.WriteInt16(30, Endianness.Big);
-
-        // case 20 - 0x13
-        tag = TdrTlv.MakeTag(22, TdrTlvType.ID_4_BYTE);
-        TdrBuffer.WriteVarUInt32(ast, tag);
-        ast.WriteInt32(40, Endianness.Big);
-        
-        // case 21 - 0x14
-        tag = TdrTlv.MakeTag(23, TdrTlvType.ID_4_BYTE);
-        TdrBuffer.WriteVarUInt32(ast, tag);
-        ast.WriteInt32(7 * 4, Endianness.Big); // size, max 7*4
-        for (int i = 0; i < 7; i++)
-        {
-            ast.WriteInt32(10, Endianness.Big);
-        }        
-        
-        // case 22 - 0x15
-        tag = TdrTlv.MakeTag(24, TdrTlvType.ID_4_BYTE);
-        TdrBuffer.WriteVarUInt32(ast, tag);
-        ast.WriteInt32(7 * 4, Endianness.Big); // size, max 7*4
-        for (int i = 0; i < 7; i++)
-        {
-            ast.WriteInt32(10, Endianness.Big);
-        }
-        
-        // case 23 - 0x16
-        tag = TdrTlv.MakeTag(25, TdrTlvType.ID_4_BYTE);
-        TdrBuffer.WriteVarUInt32(ast, tag);
-        ast.WriteInt32(7 * 4, Endianness.Big); // size, max 7*4
-        for (int i = 0; i < 7; i++)
-        {
-            ast.WriteInt32(10, Endianness.Big);
-        }        
-        
-        // case 24 - 0x17
-        tag = TdrTlv.MakeTag(26, TdrTlvType.ID_4_BYTE);
-        TdrBuffer.WriteVarUInt32(ast, tag);
-        ast.WriteInt32(7 * 4, Endianness.Big); // size, max 7*4
-        for (int i = 0; i < 7; i++)
-        {
-            ast.WriteInt32(10, Endianness.Big);
-        }
-        
-        // skip bytes
-        // case 25 - 0x18
-        tag = TdrTlv.MakeTag(27, TdrTlvType.ID_4_BYTE);
-        TdrBuffer.WriteVarUInt32(ast, tag);
-        ast.WriteInt32(20, Endianness.Big); 
-        
-        // skip bytes
-        // case 26 - 0x19
-        tag = TdrTlv.MakeTag(28, TdrTlvType.ID_4_BYTE);
-        TdrBuffer.WriteVarUInt32(ast, tag);
-        ast.WriteInt32(20, Endianness.Big); 
-        
-        // skip bytes
-        // case 27 - 0x20
-        tag = TdrTlv.MakeTag(29, TdrTlvType.ID_4_BYTE);
-        TdrBuffer.WriteVarUInt32(ast, tag);
-        ast.WriteInt32(7 * 4, Endianness.Big); // size, max 7*4
-        for (int i = 0; i < 7; i++)
-        {
-            ast.WriteInt32(10, Endianness.Big);
-        }
-        
-        
-        
-        
-        for (int i = 28; i < 200; i++)
-        {
-            tag = TdrTlv.MakeTag(i, TdrTlvType.ID_4_BYTE);
-            TdrBuffer.WriteVarUInt32(ast, tag);
-            ast.WriteInt32(7 * 4, Endianness.Big); // size, max 7*4
-            for (int j = 0; j < 7; j++)
-            {
-                ast.WriteInt32(2, Endianness.Big);
-            }
-        }
-
-
-
-        int size = ast.Position - sizePos;
-        ast.Position = sizePos;
-        ast.WriteInt32(size, Endianness.Big); // size
-
 
         _playerInitInfo.Attr = new List<byte>(ast.GetAllBytes());
+        
+      //    <macrosgroup name="CS_PROP_SYNC_TYPE">
+      //    <macro name="CS_PROP_SYNC_INT" value="1" desc="符号整数" />
+      //    <macro name="CS_PROP_SYNC_FLOAT" value="2" desc="单精度浮点数" />
+      //    <macro name="CS_PROP_SYNC_STRING" value="3" desc="字符串" />
+      //    <macro name="CS_PROP_SYNC_BOOL" value="4" desc="布尔" />
+      //    <macro name="CS_PROP_SYNC_VEC3" value="5" desc="向量" />
+      //    <macro name="CS_PROP_SYNC_UINT64" value="6" desc="uint64" />
+      //    </macrosgroup>
+              //    <struct name="CSAttrBaseData" version="1">
+              //    <entry name="Type" type="ushort" desc="类型枚举" bindmacrosgroup="CS_PROP_SYNC_TYPE"/>
+              //    <entry name="Value" type="CSAttrValue" desc="变量值" select="Type"/>
+              //    </struct>
+              //       <struct name="CSAttrData" version="1">
+              //       <entry name="AttrID" type="uint"/>
+              //       <entry name="Type" type="ushort" desc="类型枚举" bindmacrosgroup="CS_ATTR_DATA_TYPE"/>
+              //       <entry name="Value" type="CSAttrDataUnion" desc="变量值" select="Type"/>
+              //       </struct>
 
-        //    <macrosgroup name="CS_PROP_SYNC_TYPE">
-        //    <macro name="CS_PROP_SYNC_INT" value="1" desc="符号整数" />
-        //    <macro name="CS_PROP_SYNC_FLOAT" value="2" desc="单精度浮点数" />
-        //    <macro name="CS_PROP_SYNC_STRING" value="3" desc="字符串" />
-        //    <macro name="CS_PROP_SYNC_BOOL" value="4" desc="布尔" />
-        //    <macro name="CS_PROP_SYNC_VEC3" value="5" desc="向量" />
-        //    <macro name="CS_PROP_SYNC_UINT64" value="6" desc="uint64" />
-        //    </macrosgroup>
-        //    <struct name="CSAttrBaseData" version="1">
-        //    <entry name="Type" type="ushort" desc="类型枚举" bindmacrosgroup="CS_PROP_SYNC_TYPE"/>
-        //    <entry name="Value" type="CSAttrValue" desc="变量值" select="Type"/>
-        //    </struct>
-        //       <struct name="CSAttrData" version="1">
-        //       <entry name="AttrID" type="uint"/>
-        //       <entry name="Type" type="ushort" desc="类型枚举" bindmacrosgroup="CS_ATTR_DATA_TYPE"/>
-        //       <entry name="Value" type="CSAttrDataUnion" desc="变量值" select="Type"/>
-        //       </struct>
-
-        //   <struct name="CSAttrInit" version="1">
-        //       <entry name="EntityID" type="uint"/>
-        //       <entry name="Count" type="short"/>
-        //       <entry name="Attr" type="CSAttrData" count="CS_ATTR_INIT_MAX" refer="Count"/>
-        //       </struct>
-
+              //   <struct name="CSAttrInit" version="1">
+              //       <entry name="EntityID" type="uint"/>
+              //       <entry name="Count" type="short"/>
+              //       <entry name="Attr" type="CSAttrData" count="CS_ATTR_INIT_MAX" refer="Count"/>
+              //       </struct>
+  
 // <macrosgroup name="CS_ATTR_DATA_TYPE">
 //           <macro name="CS_ATTR_DATA_BASE" value="1" />
 //           <macro name="CS_ATTR_DATA_BONUS" value="2" />
 //           </macrosgroup>
 
-        _playerInitInfo.FacialInfo[0] = 1;
+              _playerInitInfo.FacialInfo[0] = 1;
         _playerInitInfo.FacialInfo[1] = 1;
 
         _instanceInitInfo = new CSInstanceInitInfo();
@@ -566,184 +345,138 @@ public class PlayerState
 
     public void OnChatMsg(ChatMessage chatMessage)
     {
+        if (chatMessage.Message == "init")
+        {
+            string dataFile = "data.csv";
+            string desiredDirectory = Path.Combine(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.Parent.Parent.FullName);
+            string filePath = Path.Combine(desiredDirectory, dataFile);
+
+            StreamBuffer ast = new StreamBuffer();
+            CsProtoPacket csp = new CsProtoPacket();
+
+            // Read the CSV file
+            string[] lines = File.ReadAllLines(filePath);
+
+            // Iterate through each line (excluding the header)
+            for (int i = 1; i < lines.Length; i++)
+            {
+                string line = lines[i];
+                string[] values = line.Split(',');
+
+                // Extract the values
+                string name = values[0];
+                int ID = int.Parse(values[1]);
+                int bonus = int.Parse(values[2]);
+                int val_type = int.Parse(values[3]);
+                int val = int.Parse(values[4]);
+
+                // Perform the desired operations with the extracted values
+                ast.SetPositionStart();
+                ast.WriteUInt32(1, Endianness.Big); // EntityID
+                ast.WriteUInt32((uint)ID, Endianness.Big); // attr id
+                ast.WriteInt16((short)bonus, Endianness.Big); // BonusID
+                ast.WriteUInt16((ushort)val_type, Endianness.Big); // attr type (CS_PROP_SYNC_TYPE) = CS_PROP_SYNC_INT
+                ast.WriteInt32(val, Endianness.Big);
+
+                csp = new CsProtoPacket();
+                csp.Cmd = CS_CMD_ID.CS_CMD_ATTR_SYNC_NTF;
+                csp.Body = ast.GetAllBytes();
+                _client.SendCsProto(csp);
+            }
+
+            return;
+        }
         if (chatMessage.Message == "test")
         {
-            StreamBuffer ast = new StreamBuffer();
-            ast.WriteUInt32(1, Endianness.Big); //EntityID
-            ast.WriteUInt32(73, Endianness.Big); //attr id
-            ast.WriteInt16(1, Endianness.Big); //BonusID
-            ast.WriteUInt16(1, Endianness.Big); //attr type (CS_PROP_SYNC_TYPE) = CS_PROP_SYNC_INT
-            ast.WriteInt32(100, Endianness.Big);
-            CsProtoPacket csp = new CsProtoPacket();
-            csp.Cmd = CS_CMD_ID.CS_CMD_ATTR_SYNC_NTF;
-            csp.Body = ast.GetAllBytes();
-            _client.SendCsProto(csp);
-
-            //   ast.SetPositionStart();
-            //   ast.WriteUInt32(1, Endianness.Big); //EntityID
-            //   ast.WriteUInt32(1, Endianness.Big); //attr id
-            //   ast.WriteInt16(1, Endianness.Big); //BonusID
-            //   ast.WriteUInt16(1, Endianness.Big); //attr type (CS_PROP_SYNC_TYPE) = CS_PROP_SYNC_INT
-            //   ast.WriteInt32(22, Endianness.Big);
-            //   csp = new CsProtoPacket();
-            //   csp.Cmd = CS_CMD_ID.CS_CMD_ATTR_SYNC_NTF;
-            //   csp.Body = ast.GetAllBytes();
-            //   _client.SendCsProto(csp);
-            //   
-            //   ast.SetPositionStart();
-            //   ast.WriteUInt32(1, Endianness.Big); //EntityID
-            //   ast.WriteUInt32(74, Endianness.Big); //attr id
-            //   ast.WriteInt16(1, Endianness.Big); //BonusID
-            //   ast.WriteUInt16(1, Endianness.Big); //attr type (CS_PROP_SYNC_TYPE) = CS_PROP_SYNC_INT
-            //   ast.WriteInt32(1000, Endianness.Big);
-            //   csp = new CsProtoPacket();
-            //   csp.Cmd = CS_CMD_ID.CS_CMD_ATTR_SYNC_NTF;
-            //   csp.Body = ast.GetAllBytes();
-            //   _client.SendCsProto(csp);
-            //   
-            //   ast.SetPositionStart();
-            //   ast.WriteUInt32(1, Endianness.Big); //EntityID
-            //   ast.WriteUInt32(20, Endianness.Big); //attr id
-            //   ast.WriteInt16(20, Endianness.Big); //BonusID
-            //   ast.WriteUInt16(2, Endianness.Big); //attr type (CS_PROP_SYNC_TYPE) = CS_PROP_SYNC_INT
-            //   ast.WriteFloat(100, Endianness.Big);
-            //   csp = new CsProtoPacket();
-            //   csp.Cmd = CS_CMD_ID.CS_CMD_ATTR_SYNC_NTF;
-            //   csp.Body = ast.GetAllBytes();
-            //   _client.SendCsProto(csp);
-            //   
-            //   ast.SetPositionStart();
-            //   ast.WriteUInt32(1, Endianness.Big); //EntityID
-            //   ast.WriteUInt32(21, Endianness.Big); //attr id
-            //   ast.WriteInt16(21, Endianness.Big); //BonusID
-            //   ast.WriteUInt16(1, Endianness.Big); //attr type (CS_PROP_SYNC_TYPE) = CS_PROP_SYNC_INT
-            //   ast.WriteFloat(100, Endianness.Big);
-            //   csp = new CsProtoPacket();
-            //   csp.Cmd = CS_CMD_ID.CS_CMD_ATTR_SYNC_NTF;
-            //   csp.Body = ast.GetAllBytes();
-            //   _client.SendCsProto(csp);
-            //   
-            //   ast.SetPositionStart();
-            //   ast.WriteUInt32(1, Endianness.Big); //EntityID
-            //   ast.WriteUInt32(2, Endianness.Big); //attr id
-            //   ast.WriteInt16(2, Endianness.Big); //BonusID
-            //   ast.WriteUInt16(3, Endianness.Big); //attr type (CS_PROP_SYNC_TYPE) = CS_PROP_SYNC_INT
-            //   string name = "testa";
-            //   ast.WriteInt32(name.Length + 1, Endianness.Big);
-            //   ast.WriteCString(name);
-            //   csp = new CsProtoPacket();
-            //   csp.Cmd = CS_CMD_ID.CS_CMD_ATTR_SYNC_NTF;
-            //   csp.Body = ast.GetAllBytes();
-            //   _client.SendCsProto(csp);
-
-            //  <entry name="EntityID" type="uint"/>
-            //  <entry name="AttrID" type="uint"/>
-            //  <entry name="BonusID" type="short"/>
-            //  <entry name="Data" type="CSAttrBaseData" desc="变量值"/>
-            //   _client.SendCsPacket(NewCsPacket.TokenSync(new CSTokenSync()
-            //   {
-            //       Entries = new List<CSTokenSyncEntry>()
-            //       {
-            //           new CSTokenSyncEntry(
-            //               new CSTokenSyncVar(CS_TOKEN_SYNC_TYPE.CS_TOKEN_SYNC_ENTITYID)
-            //               {
-            //                   EntityID = 1
-            //               }
-            //           )
-            //           {
-            //               Name = "localplayer"
-            //           }
-            //       }
-            //   }));
-
-            //   _client.SendCsPacket(NewCsPacket.EntityAppearNtfIDList(new CSEntityAppearNtfIDList()
-            //   {
-            //       InitType = 1,
-            //       LogicEntityID = new List<uint>() { 1 },
-            //       LogicEntityType = new List<uint>() { 1 }
-            //   }));
-            return;
-            _client.SendCsPacket(NewCsPacket.PlayerQueryInfo(new CSPlayerQueryInfo()
+            _client.SendCsPacket(NewCsPacket.PlayerTeleport(new CSPlayerTeleport()
             {
-                ErrNo = 0,
-                NetID = 1,
-                SessionID = 1,
-                Name = "FAFA",
-                Gender = 0,
-                AvatarSetID = 1,
-                Weapon = 0,
-                WeaponAtkFlag = 0,
-                HunterStar = "asdasd"
-            }));
-
-            _client.SendCsPacket(NewCsPacket.SpawnSrvEnt(new CSSpawnSrvEnt()
-            {
-                Name = _roleBaseInfo.Name,
-                NetObjID = 1,
-                Position = new XYZPosition()
-                {
-                    x = _playerInitInfo.Pose.t.x,
-                    y = _playerInitInfo.Pose.t.y,
-                    z = _playerInitInfo.Pose.t.z
-                },
-                Rotation = new Quaternion(),
-                Scale = 2.0f
-            }));
-
-            _client.SendCsPacket(NewCsPacket.NewPlayer(new CSSpawnNewPlayer()
-            {
-                Name = _roleBaseInfo.Name
-            }));
-
-            _client.SendCsPacket(NewCsPacket.AssignId(new CSAssignPlayerId()
-            {
-                PlayerId = 1
-            }));
-
-            SendPlayerSpawn();
-
-            _client.SendCsPacket(NewCsPacket.PlayerAppearNtf(_playerAppearNtf));
-
-            CSBattleEntitySpeed spd = new CSBattleEntitySpeed();
-            spd.NetObjId = 1;
-            spd.IsStart = 1;
-            spd.InitSpeed.x = 10;
-            spd.InitSpeed.y = 10;
-            spd.InitSpeed.z = 10;
-            spd.Accelator.x = 10;
-            spd.Accelator.y = 10;
-            spd.Accelator.z = 10;
-            spd.InitAngleSpeed = 10;
-            spd.AngleAccelator = 10;
-            _client.SendCsPacket(NewCsPacket.EntitySpeed(spd));
-
-            _client.SendCsPacket(NewCsPacket.ObjectAction(new CSObjectActionSyncEntry(
-                    new CSTeleportParam()
-                    {
-                        targetPos = new CSVec3() { x = 1.0f, y = 1.0f, z = 1.0f }
-                    })
-                {
-                    EntityId = 1
-                }
-            ));
-
-            _client.SendCsPacket(NewCsPacket.ActorLocomotion(new CSActorLocomotion()
-            {
+                SyncTime = 1,
                 NetObjId = 1,
-                SyncTime = 0,
-                MoveType = 1,
-                UserDataF1 = 10.0f,
-                UserDataF2 = 10.0f,
-                UserDataF3 = 10.0f,
-                UserDataF4 = 10.0f,
-                UserDataF5 = 10.0f,
-                UserDataV1 = new CSVec3() { x = 10.0f, y = 10.0f, z = 10.0f },
-                UserDataU1 = 10,
-                UserDataU2 = 10,
-                UserDataI1 = 10,
-                UserDataS1 = "",
-                UserDataS2 = "",
+                Region = 1,
+                TargetPos = new CSQuatT()
+                {
+                    q = new CSQuat()
+                    {
+                        v = new CSVec3() { x = 200.0f, y = 200.0f, z = 200.0f },
+                        w = 0.0f
+                    },
+                    t = new CSVec3() { x = 200.0f, y = 200.0f, z = 200.0f }
+                },
+                ParentGUID = 1,
+                InitState = 1
             }));
+        }
+        if (chatMessage.Message == "print")
+        {
+            string csvFile = "output.csv";
+            string desiredDirectory = Path.Combine(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.Parent.Parent.FullName);
+            string filePath = Path.Combine(desiredDirectory, csvFile);
+            string trigger = "Teleport_To_Cat_Area";
+            string instanceLevelId = _instanceInitInfo.LevelID.ToString();
+            using (TextFieldParser parser = new TextFieldParser(filePath))
+            {
+                parser.TextFieldType = FieldType.Delimited;
+                parser.SetDelimiters(",");
+
+                // Skip the header line
+                parser.ReadLine();
+                Logger.Info($"Getting info for: ({trigger})");
+                Logger.Info($"levelID: ({_instanceInitInfo.LevelID})");
+                while (!parser.EndOfData)
+                {
+                    string[] fields = parser.ReadFields();
+                    string levelId = fields[0];
+                    bool isMatch = !string.IsNullOrEmpty(levelId) &&
+                        !string.IsNullOrEmpty(instanceLevelId) &&
+                        (instanceLevelId.Contains(levelId) || levelId.Contains(instanceLevelId));
+                    
+                    if (isMatch) {
+                        Logger.Info($"{levelId} match found with {_instanceInitInfo.LevelID} : {isMatch}");
+                        string filename = fields[1];
+                        string areaName = fields[2];
+                        string name = fields[3];
+                        string pos = fields[4];
+                        string rotate = fields[5];
+                        //Logger.Error($"({levelId})({filename})({areaName})({name})");
+                        if (name.Contains(trigger))
+                        {
+                            Logger.Error($"triggered!");
+                            // Process the position (Pos) and rotation (Rotate) values
+                            string[] posValues = pos.Split(',');
+                            string[] rotateValues = rotate.Split(',');
+
+                            float posX = float.Parse(posValues[0]);
+                            float posY = float.Parse(posValues[1]);
+                            float posZ = float.Parse(posValues[2]);
+
+                            float rotateX = float.Parse(rotateValues[0]);
+                            float rotateY = float.Parse(rotateValues[1]);
+                            float rotateZ = float.Parse(rotateValues[2]);
+                            float rotateW = float.Parse(rotateValues[3]);
+
+
+                            CSQuatT TargetPos = new CSQuatT()
+                            {
+
+                                q = new CSQuat()
+                                {
+                                    v = new CSVec3() { x = rotateX, y = rotateY, z = rotateZ },
+                                    w = rotateW
+                                },
+                                t = new CSVec3() { x = posX, y = posY, z = posZ }
+                            };
+                            Logger.Info($"Sending Response");
+                            _client.SendCsPacket(NewCsPacket.PlayerRegionJumpRsp(new CSPlayerRegionJumpRsp()
+                            {
+                                ErrorCode = 0,
+                                RegionId = 180201,
+                                Transform = TargetPos
+
+                            }));
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -809,17 +542,189 @@ public class PlayerState
     /// </summary>
     public void OnChangeTownInstance(CSChangeTownInstanceReq req)
     {
+        string fileName = "stage.txt";
+        string csvFile = "output.csv";
+        string desiredDirectory = Path.Combine(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.Parent.Parent.FullName);
+        string filePath = Path.Combine(desiredDirectory, fileName);
+        string csvPath = Path.Combine(desiredDirectory, csvFile);
+        int level;
+
+        try
+        {
+            using (StreamReader sr = new StreamReader(filePath))
+            {
+                string firstLine = sr.ReadLine();
+                Logger.Info($"Stage ID Found: ({firstLine}, {filePath})");
+                if (int.TryParse(firstLine, out int number))
+                {
+                    level = number;
+                }
+                else
+                {
+                    level = req.LevelId;
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            level = req.LevelId;
+            Console.WriteLine("An error occurred while reading the file: " + e.Message);
+            Logger.Error($"File Not Found Using Default: ({level})");
+
+        }
+
+        string levelIdToSearch = level.ToString("D6") + ";"; // LevelID to search for
+
+        // Read the CSV file
+        List<string[]> csvData = new List<string[]>();
+
+        using (StreamReader reader = new StreamReader(csvPath))
+        {
+            string line;
+            while ((line = reader.ReadLine()) != null)
+            {
+                string[] row = line.Split(',');
+                csvData.Add(row);
+            }
+        }
+
+        // Filter the rows with the desired levelId
+        List<string[]> filteredData = new List<string[]>();
+
+        foreach (string[] row in csvData)
+        {
+            if (row[0] == levelIdToSearch)
+            {
+                filteredData.Add(row);
+            }
+        }
+
+        // Pick a random row from the filtered data
+        Random random = new Random();
+        int randomIndex = random.Next(filteredData.Count);
+        string[] randomRow = filteredData[randomIndex];
+
+        // Extract the position (Pos) values as xyz floats
+        string posValue = randomRow[4] + "," + randomRow[5] + "," + randomRow[6];
+        string[] posCoordinates = posValue.Replace("\"", "").Split(',');
+
+        float posX = float.Parse(posCoordinates[0].Trim());
+        float posY = float.Parse(posCoordinates[1].Trim());
+        float posZ = float.Parse(posCoordinates[2].Trim());
+        //Logger.Info($"Setting new spawn coords ID Coordinates Found in File: ({csvPath}");
+        //Logger.Info($"Stage ID Coordinates Found in File: ({float.Parse(posCoordinates[0].Trim())}");
+        Logger.Info($"Random row with levelId {levelIdToSearch}:");
+        Logger.Info($"Name: {randomRow[3]}");
+        Logger.Info($"Position (xyz): {posX}, {posY}, {posZ}");
+        //Logger.Info($"Stage ID Coordinates Found: ({float.Parse(posCoordinates[0])}");
+
+        _client.SendCsPacket(NewCsPacket.PlayerTeleport(new CSPlayerTeleport()
+        {
+            SyncTime = 1,
+            NetObjId = 1,
+            Region = 1,
+            TargetPos = new CSQuatT()
+            {
+                q = new CSQuat()
+                {
+                    v = new CSVec3() { x = 200.0f, y = 200.0f, z = 200.0f },
+                    w = 0.0f
+                },
+                t = new CSVec3() { x = posX, y = posY, z = posZ }
+            },
+            ParentGUID = 1,
+            InitState = 1
+        }));
+
         //  TODO req tells us spawn position name, the coordinates should be in levels/xx/mission .xml 
         _client.SendCsPacket(NewCsPacket.ChangeTownInstanceRsp(new CSChangeTownInstanceRsp()
         {
             ErrCode = 0,
-            LevelID = req.LevelId
+
+            LevelID = level,
         }));
-        _instanceInitInfo.LevelID = req.LevelId;
+        _instanceInitInfo.LevelID = level;
         SendTownServerInitNtf();
     }
 
-    public void OnBattleSvr()
+    public void OnPlayerRegionJumpReq(CSPlayerRegionJumpReq req)
+    {
+        Logger.Info($"Triggered");
+        CSVec3 coords = req.PlayerPos;
+        string trigger = req.TriggerName;
+        Logger.Info($"Teleport Info: ({trigger})");
+        string instanceLevelId = _instanceInitInfo.LevelID.ToString();
+        string csvFile = "output.csv";
+        string desiredDirectory = Path.Combine(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.Parent.Parent.FullName);
+        string filePath = Path.Combine(desiredDirectory, csvFile);
+
+        using (TextFieldParser parser = new TextFieldParser(filePath))
+        {
+            parser.TextFieldType = FieldType.Delimited;
+            parser.SetDelimiters(",");
+
+            // Skip the header line
+            parser.ReadLine();
+            Logger.Info($"File Line: ({trigger})");
+            while (!parser.EndOfData)
+            {
+                string[] fields = parser.ReadFields();
+                string levelId = fields[0];
+                bool isMatch = !string.IsNullOrEmpty(levelId) &&
+                    !string.IsNullOrEmpty(instanceLevelId) &&
+                    (instanceLevelId.Contains(levelId) || levelId.Contains(instanceLevelId));
+                if (isMatch)
+                {
+                    string filename = fields[1];
+                    string areaName = fields[2];
+                    string name = fields[3];
+                    string pos = fields[4];
+                    string rotate = fields[5];
+                    Logger.Error($"stage match found: ({levelId})({filename})({areaName})({name})");
+
+                    if (name.Contains(trigger))
+                    {
+                        Logger.Info($"warp point match found!");
+                        // Process the position (Pos) and rotation (Rotate) values
+                        string[] posValues = pos.Split(',');
+                        string[] rotateValues = rotate.Split(',');
+
+                        float posX = float.Parse(posValues[0]);
+                        float posY = float.Parse(posValues[1]);
+                        float posZ = float.Parse(posValues[2]);
+
+                        float rotateX = float.Parse(rotateValues[0]);
+                        float rotateY = float.Parse(rotateValues[1]);
+                        float rotateZ = float.Parse(rotateValues[2]);
+                        float rotateW = float.Parse(rotateValues[3]);
+
+
+                        CSQuatT TargetPos = new CSQuatT()
+                        {
+
+                            q = new CSQuat()
+                            {
+                                v = new CSVec3() { x = rotateX, y = rotateY, z = rotateZ },
+                                w = rotateW
+                            },
+                            t = new CSVec3() { x = posX, y = posY, z = posZ }
+                        };
+                        Logger.Info($"Sending Response");
+                        _client.SendCsPacket(NewCsPacket.PlayerRegionJumpRsp(new CSPlayerRegionJumpRsp()
+                        {
+                            ErrorCode = 0,
+                            RegionId = 0,
+                            Transform = TargetPos
+
+                        }));
+                    }
+                }
+            }
+        }
+
+    }
+
+        public void OnBattleSvr()
     {
         //SendPlayerLevelInitNtf();
         //SendTownServerInitNtf();
