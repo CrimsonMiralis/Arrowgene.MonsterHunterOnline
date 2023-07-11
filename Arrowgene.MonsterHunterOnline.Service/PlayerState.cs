@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 using System.Threading;
 using Arrowgene.Buffers;
@@ -566,18 +567,46 @@ public class PlayerState
 
     public void OnChatMsg(ChatMessage chatMessage)
     {
-        if (chatMessage.Message == "test")
+        if (chatMessage.Message == "init")
         {
+            string dataFile = "data.csv";
+            string desiredDirectory = Path.Combine(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.Parent.Parent.Parent.FullName);
+            string filePath = Path.Combine(desiredDirectory, dataFile);
+
             StreamBuffer ast = new StreamBuffer();
-            ast.WriteUInt32(1, Endianness.Big); //EntityID
-            ast.WriteUInt32(73, Endianness.Big); //attr id
-            ast.WriteInt16(1, Endianness.Big); //BonusID
-            ast.WriteUInt16(1, Endianness.Big); //attr type (CS_PROP_SYNC_TYPE) = CS_PROP_SYNC_INT
-            ast.WriteInt32(100, Endianness.Big);
             CsProtoPacket csp = new CsProtoPacket();
-            csp.Cmd = CS_CMD_ID.CS_CMD_ATTR_SYNC_NTF;
-            csp.Body = ast.GetAllBytes();
-            _client.SendCsProto(csp);
+
+            // Read the CSV file
+            string[] lines = File.ReadAllLines(filePath);
+
+            // Iterate through each line (excluding the header)
+            for (int i = 1; i < lines.Length; i++)
+            {
+                string line = lines[i];
+                string[] values = line.Split(',');
+
+                // Extract the values
+                string name = values[0];
+                int ID = int.Parse(values[1]);
+                int bonus = int.Parse(values[2]);
+                int val_type = int.Parse(values[3]);
+                int val = int.Parse(values[4]);
+
+                // Perform the desired operations with the extracted values
+                ast.SetPositionStart();
+                ast.WriteUInt32(1, Endianness.Big); // EntityID
+                ast.WriteUInt32((uint)ID, Endianness.Big); // attr id
+                ast.WriteInt16((short)bonus, Endianness.Big); // BonusID
+                ast.WriteUInt16((ushort)val_type, Endianness.Big); // attr type (CS_PROP_SYNC_TYPE) = CS_PROP_SYNC_INT
+                ast.WriteInt32(val, Endianness.Big);
+
+                csp = new CsProtoPacket();
+                csp.Cmd = CS_CMD_ID.CS_CMD_ATTR_SYNC_NTF;
+                csp.Body = ast.GetAllBytes();
+                _client.SendCsProto(csp);
+            }
+
+            return;
 
             //   ast.SetPositionStart();
             //   ast.WriteUInt32(1, Endianness.Big); //EntityID
