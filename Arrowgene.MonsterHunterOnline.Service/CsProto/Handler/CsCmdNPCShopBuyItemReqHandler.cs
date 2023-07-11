@@ -7,7 +7,7 @@ namespace Arrowgene.MonsterHunterOnline.Service.CsProto.Handler;
 
 public class CsCmdNPCShopBuyItemReqHandler : ICsProtoHandler
 {
-    public CS_CMD_ID Cmd => CS_CMD_ID.CS_CMD_PLAYER_REGION_JUMP_REQ;
+    public CS_CMD_ID Cmd => CS_CMD_ID.CS_CMD_NPCSHOP_BUYITEM_REQ;
 
     public void Handle(Client client, CsProtoPacket packet)
     {
