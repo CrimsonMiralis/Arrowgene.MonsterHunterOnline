@@ -348,7 +348,7 @@ public class PlayerState
         if (chatMessage.Message == "init")
         {
             string dataFile = "data.csv";
-            string desiredDirectory = Path.Combine(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.Parent.Parent.FullName);
+            string desiredDirectory = Path.Combine(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.Parent.Parent.Parent.FullName);
             string filePath = Path.Combine(desiredDirectory, dataFile);
 
             StreamBuffer ast = new StreamBuffer();
@@ -409,7 +409,7 @@ public class PlayerState
         if (chatMessage.Message == "print")
         {
             string csvFile = "output.csv";
-            string desiredDirectory = Path.Combine(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.Parent.Parent.FullName);
+            string desiredDirectory = Path.Combine(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.Parent.Parent.Parent.FullName);
             string filePath = Path.Combine(desiredDirectory, csvFile);
             string trigger = "Teleport_To_Cat_Area";
             string instanceLevelId = _instanceInitInfo.LevelID.ToString();
@@ -544,7 +544,7 @@ public class PlayerState
     {
         string fileName = "stage.txt";
         string csvFile = "output.csv";
-        string desiredDirectory = Path.Combine(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.Parent.Parent.FullName);
+        string desiredDirectory = Path.Combine(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.Parent.Parent.Parent.FullName);
         string filePath = Path.Combine(desiredDirectory, fileName);
         string csvPath = Path.Combine(desiredDirectory, csvFile);
         int level;
@@ -655,7 +655,7 @@ public class PlayerState
         Logger.Info($"Teleport Info: ({trigger})");
         string instanceLevelId = _instanceInitInfo.LevelID.ToString();
         string csvFile = "output.csv";
-        string desiredDirectory = Path.Combine(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.Parent.Parent.FullName);
+        string desiredDirectory = Path.Combine(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.Parent.Parent.Parent.FullName);
         string filePath = Path.Combine(desiredDirectory, csvFile);
 
         using (TextFieldParser parser = new TextFieldParser(filePath))
@@ -668,6 +668,7 @@ public class PlayerState
             Logger.Info($"File Line: ({trigger})");
             while (!parser.EndOfData)
             {
+                Logger.Info($"In while loop");
                 string[] fields = parser.ReadFields();
                 string levelId = fields[0];
                 bool isMatch = !string.IsNullOrEmpty(levelId) &&
@@ -675,13 +676,14 @@ public class PlayerState
                     (instanceLevelId.Contains(levelId) || levelId.Contains(instanceLevelId));
                 if (isMatch)
                 {
+                    Logger.Info($"found a match!");
                     string filename = fields[1];
                     string areaName = fields[2];
                     string name = fields[3];
                     string pos = fields[4];
                     string rotate = fields[5];
                     Logger.Error($"stage match found: ({levelId})({filename})({areaName})({name})");
-
+                    Logger.Info($"contains? {name.Contains(trigger)}");
                     if (name.Contains(trigger))
                     {
                         Logger.Info($"warp point match found!");
@@ -698,7 +700,7 @@ public class PlayerState
                         float rotateZ = float.Parse(rotateValues[2]);
                         float rotateW = float.Parse(rotateValues[3]);
 
-
+                        Logger.Info($"I didn't die yet!");
                         CSQuatT TargetPos = new CSQuatT()
                         {
 
