@@ -34,3 +34,9 @@ Looks to be anti cheat based communication
 
 ## port 8000/UDP (ied-tqos.qq.com )
 Looks to be system / log information based communication
+  
+  
+###Branch Properties  
+Added a data.csv thats used to add properties to the player when "init" is typed in the chat, and output.csv which contains most of the teleport points for the server to reference. stage.txt forces the server to teleport you to that stage ID on fast travel, but it seems to only work for tutorial and hub areas  
+
+Main purpose of the branch was to try to add the handler for warp points, if you do "print" in chat in meze for example it'll go through the process and take you to the cat area. Actually going to the zone trigger seems to stil bug howver
