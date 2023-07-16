@@ -94,6 +94,9 @@ namespace Arrowgene.MonsterHunterOnline.Service.CsProto.Core
         public static CsProtoStructurePacket<PlayerTeleport> PlayerTeleport =>
             new(CS_CMD_ID.CS_CMD_PLAYER_TELEPORT_NTF);
 
+        public static CsProtoStructurePacket<LeaveInstanceRsp> LeaveInstanceRsp =>
+            new(CS_CMD_ID.CS_CMD_LEAVE_INSTANCE_RSP);
+
         //CS_CMD_SERVER_ACTOR_FIFO_SYNC_NTF - registered by client
         //CS_CMD_BATTLE_ACTOR_FIFO_SYNC_NTF - registered by client
 
