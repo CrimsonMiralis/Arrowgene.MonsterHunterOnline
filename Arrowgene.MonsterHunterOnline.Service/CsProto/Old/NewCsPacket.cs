@@ -185,14 +185,6 @@ namespace Arrowgene.MonsterHunterOnline.Service.CsProto
         }
 
         /// <summary>
-        /// 副本UI操作同步请求
-        /// </summary>
-        public static CsTPacket<CSMainInstanceOptSynReq> MainInstanceSynOptReq(CSMainInstanceOptSynReq structure)
-        {
-            return new CsTPacket<CSMainInstanceOptSynReq>(CS_CMD_ID.CS_CMD_MAIN_INSTANCE_OPT_SYN_REQ, structure);
-        }
-
-        /// <summary>
         /// GM进入副本服务器请求
         /// </summary>
         public static CsTPacket<CSGMEnterInstanceReq> GMEnterInstanceReq(CSGMEnterInstanceReq structure)
@@ -239,15 +231,7 @@ namespace Arrowgene.MonsterHunterOnline.Service.CsProto
         {
             return new CsTPacket<CSEnterInstanceCountDown>(CS_CMD_ID.CS_CMD_ENTER_INSTANCE_COUNT_DOWN, structure);
         }
-
-        /// <summary>
-        /// 副本UI操作同步响应
-        /// </summary>
-        public static CsTPacket<CSMainInstanceOptSynRsp> MainInstanceSynOptRsp(CSMainInstanceOptSynRsp structure)
-        {
-            return new CsTPacket<CSMainInstanceOptSynRsp>(CS_CMD_ID.CS_CMD_MAIN_INSTANCE_OPT_SYN_RSP, structure);
-        }
-
+        
         /// <summary>
         /// 副本UI进入请求
         /// </summary>
@@ -999,21 +983,7 @@ namespace Arrowgene.MonsterHunterOnline.Service.CsProto
             return new CsTPacket<Err>(CS_CMD_ID.S2C_CMD_ERR, structure);
         }
 
-        /// <summary>
-        /// 客户端发送的广播聊天请求
-        /// </summary>
-        public static CsTPacket<CSChatBroadcastReq> ChatBroadcastReq(CSChatBroadcastReq structure)
-        {
-            return new CsTPacket<CSChatBroadcastReq>(CS_CMD_ID.CS_CMD_CHAT_BROADCAST_REQ, structure);
-        }
 
-        /// <summary>
-        /// 客户端发送的密语和私聊聊天请求
-        /// </summary>
-        public static CsTPacket<CSChatPrivateReq> ChatPrivateReq(CSChatPrivateReq structure)
-        {
-            return new CsTPacket<CSChatPrivateReq>(CS_CMD_ID.CS_CMD_CHAT_PRIVATE_REQ, structure);
-        }
 
         /// <summary>
         /// 发送给客户端的聊天请求错误返回
@@ -1022,15 +992,7 @@ namespace Arrowgene.MonsterHunterOnline.Service.CsProto
         {
             return new CsTPacket<CSChatRsp>(CS_CMD_ID.CS_CMD_CHAT_RSP, structure);
         }
-
-        /// <summary>
-        /// 发送给客户端的其他玩家聊天信息通知
-        /// </summary>
-        public static CsTPacket<CSChatNtf> ChatNtf(CSChatNtf structure)
-        {
-            return new CsTPacket<CSChatNtf>(CS_CMD_ID.CS_CMD_CHAT_NTF, structure);
-        }
-
+        
         /// <summary>
         /// 系统提示
         /// </summary>
@@ -1160,22 +1122,6 @@ namespace Arrowgene.MonsterHunterOnline.Service.CsProto
         }
 
         /// <summary>
-        /// Spawn server entity
-        /// </summary>
-        public static CsTPacket<CSSpawnSrvEnt> SpawnSrvEnt(CSSpawnSrvEnt structure)
-        {
-            return new CsTPacket<CSSpawnSrvEnt>(CS_CMD_ID.CS_CMD_SPAWN_SRVENT, structure);
-        }
-
-        /// <summary>
-        /// Spawn server entities list
-        /// </summary>
-        public static CsTPacket<CSSpawnSrvEntList> SpawnSrvEntList(CSSpawnSrvEntList structure)
-        {
-            return new CsTPacket<CSSpawnSrvEntList>(CS_CMD_ID.CS_CMD_SPAWN_SRVENTLIST, structure);
-        }
-
-        /// <summary>
         /// Remove server entity
         /// </summary>
         public static CsTPacket<CSRemoveSrvEnt> RemoveSrvEnt(CSRemoveSrvEnt structure)
@@ -1198,15 +1144,7 @@ namespace Arrowgene.MonsterHunterOnline.Service.CsProto
         {
             return new CsTPacket<CSStateId>(CS_CMD_ID.CS_CMD_CLIENT_STATEID, structure);
         }
-
-        /// <summary>
-        /// Monster active state
-        /// </summary>
-        public static CsTPacket<CSMonsterActiveState> MonsterActiveState(CSMonsterActiveState structure)
-        {
-            return new CsTPacket<CSMonsterActiveState>(CS_CMD_ID.CS_CMD_MONSTER_ACTIVE, structure);
-        }
-
+        
         /// <summary>
         /// 新场景特效
         /// </summary>
@@ -1230,23 +1168,7 @@ namespace Arrowgene.MonsterHunterOnline.Service.CsProto
         {
             return new CsTPacket<CSSceneEffectNtfList>(CS_CMD_ID.CS_CMD_SCENE_EFFECT_APPEAR_LIST_NTF, structure);
         }
-
-        /// <summary>
-        /// LogicEntity下发列表
-        /// </summary>
-        public static CsTPacket<CSEntityAppearNtfIDList> EntityAppearNtfIDList(CSEntityAppearNtfIDList structure)
-        {
-            return new CsTPacket<CSEntityAppearNtfIDList>(CS_CMD_ID.CS_CMD_ENTITY_APPEAR_NTF_ID_LIST, structure);
-        }
-
-        /// <summary>
-        /// LogicEntity数据同步请求
-        /// </summary>
-        public static CsTPacket<CSLoadEntityReq> LoadEntityReq(CSLoadEntityReq structure)
-        {
-            return new CsTPacket<CSLoadEntityReq>(CS_CMD_ID.CS_CMD_LOAD_ENTITY_REQ, structure);
-        }
-
+        
         /// <summary>
         /// PVP即时成就通知
         /// </summary>
@@ -1835,23 +1757,7 @@ namespace Arrowgene.MonsterHunterOnline.Service.CsProto
         {
             return new CsTPacket<CSObjStateChange>(CS_CMD_ID.CS_CMD_BATTLE_OBJ_STATECHANGE, structure);
         }
-
-        /// <summary>
-        /// 怪物出现通知
-        /// </summary>
-        public static CsTPacket<CSMonsterAppearNtf> MonsterAppearNtf(CSMonsterAppearNtf structure)
-        {
-            return new CsTPacket<CSMonsterAppearNtf>(CS_CMD_ID.CS_CMD_MONSTER_APPEAR_NTF, structure);
-        }
-
-        /// <summary>
-        /// 怪物出现通知列表
-        /// </summary>
-        public static CsTPacket<CSMonsterAppearNtfList> MonsterAppearNtfList(CSMonsterAppearNtfList structure)
-        {
-            return new CsTPacket<CSMonsterAppearNtfList>(CS_CMD_ID.CS_CMD_MONSTER_APPEAR_NTF_LIST, structure);
-        }
-
+        
         /// <summary>
         /// 玩家出现通知
         /// </summary>
@@ -1898,22 +1804,6 @@ namespace Arrowgene.MonsterHunterOnline.Service.CsProto
         public static CsTPacket<CSSetTrapRsp> SetTrapRsp(CSSetTrapRsp structure)
         {
             return new CsTPacket<CSSetTrapRsp>(CS_CMD_ID.CS_CMD_SET_TRAP_RSP, structure);
-        }
-
-        /// <summary>
-        /// 场景物件出现通知
-        /// </summary>
-        public static CsTPacket<CSSceneObjAppearNtf> SceneObjAppearNtf(CSSceneObjAppearNtf structure)
-        {
-            return new CsTPacket<CSSceneObjAppearNtf>(CS_CMD_ID.CS_CMD_SCENEOBJ_APPEAR_NTF, structure);
-        }
-
-        /// <summary>
-        /// 场景物件出现通知列表
-        /// </summary>
-        public static CsTPacket<CSSceneObjAppearNtfList> SceneObjAppearNtfList(CSSceneObjAppearNtfList structure)
-        {
-            return new CsTPacket<CSSceneObjAppearNtfList>(CS_CMD_ID.CS_CMD_SCENEOBJ_APPEAR_NTF_LIST, structure);
         }
 
         /// <summary>

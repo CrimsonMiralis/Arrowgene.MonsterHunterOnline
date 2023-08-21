@@ -30,6 +30,17 @@ public class PlayerState
     public static Server Server;
     public int levelId { get; set; }
     public int prevLevelId { get; set; }
+    public CSVec3 Position { get; set; }
+
+    public CSVec3 InitSpawnPos = new CSVec3()
+    {
+        x = 1588.4813f,
+        y = 1593.0623f,
+        z = 142.93517f
+    };
+
+    public int InitLevelId = 150101;
+
 
     public PlayerState(Client client)
     {
@@ -304,98 +315,106 @@ public class PlayerState
         ast.WriteInt32(size, Endianness.Big); // size
     }
 
-    public void OnChatMsg(ChatMessage chatMessage)
+    public static byte[] GetEquip()
     {
-        if (chatMessage.Message == "test")
+        StreamBuffer ast = new StreamBuffer();
+        ast.WriteByte((byte)TdrTlvMagic.NoVariant);
+
+        int sizePos = ast.Position;
+        ast.WriteInt32(0, Endianness.Big); // size
+
+        // case 1
+        uint tag = TdrTlv.MakeTag(1, TdrTlvType.ID_2_BYTE);
+        TdrBuffer.WriteVarUInt32(ast, tag);
+        ast.WriteInt16(1);
+
+        // case 2
+        tag = TdrTlv.MakeTag(2, TdrTlvType.ID_4_BYTE);
+        TdrBuffer.WriteVarUInt32(ast, tag);
+        int subStartPos = ast.Position;
+        ast.WriteInt32(0, Endianness.Big); // sub length
+
+        for (int subEntryIndex = 0; subEntryIndex < 40; subEntryIndex++)
         {
-            CSSpawnPlayer _spawnPlayer = new CSSpawnPlayer();
-            _spawnPlayer.PlayerId = 1;
-            _spawnPlayer.NetObjId = 1;
-            _spawnPlayer.Name = "Name";
-            _spawnPlayer.Gender = 1;
-            _spawnPlayer.Scale = 1.0f;
-            _spawnPlayer.NewConnect = 1;
-            _spawnPlayer.SendSrvId = 1;
-            _spawnPlayer.AvatarSetID = 1;
-            _spawnPlayer.Position = new XYZPosition();
+            int subEntryStartPos = ast.Position;
+            ast.WriteInt32(0, Endianness.Big); // sub entry length
 
-            _client.SendCsPacket(NewCsPacket.SpawnPlayer(_spawnPlayer));
+            // sub structure - max 9
+            //case s0
+            tag = TdrTlv.MakeTag(2, TdrTlvType.ID_8_BYTE);
+            TdrBuffer.WriteVarUInt32(ast, tag);
+            ast.WriteInt64(64439 + subEntryIndex, Endianness.Big);
+            //case s1
+            tag = TdrTlv.MakeTag(3, TdrTlvType.ID_4_BYTE);
+            TdrBuffer.WriteVarUInt32(ast, tag);
+            ast.WriteInt32(64439 + subEntryIndex, Endianness.Big);
+            //case s2
+            tag = TdrTlv.MakeTag(4, TdrTlvType.ID_1_BYTE);
+            TdrBuffer.WriteVarUInt32(ast, tag);
+            ast.WriteByte(1);
+            //case s3
+            tag = TdrTlv.MakeTag(5, TdrTlvType.ID_2_BYTE);
+            TdrBuffer.WriteVarUInt32(ast, tag);
+            ast.WriteInt16(1, Endianness.Big);
+            //case s4
+            tag = TdrTlv.MakeTag(6, TdrTlvType.ID_2_BYTE);
+            TdrBuffer.WriteVarUInt32(ast, tag);
+            ast.WriteInt16(1, Endianness.Big);
+            //case s5
+            tag = TdrTlv.MakeTag(7, TdrTlvType.ID_1_BYTE);
+            TdrBuffer.WriteVarUInt32(ast, tag);
+            ast.WriteByte(1);
+            //case s6
+            tag = TdrTlv.MakeTag(8, TdrTlvType.ID_1_BYTE);
+            TdrBuffer.WriteVarUInt32(ast, tag);
+            ast.WriteByte(1);
+
+            //cases7 -> skip bytes
+
+            //case s8
+    //    tag = TdrTlv.MakeTag(10, TdrTlvType.ID_4_BYTE);
+    //    TdrBuffer.WriteVarUInt32(ast, tag);
+    //    ast.WriteInt32(0x20 * 1, Endianness.Big); // size, max 0x20*1
+    //    for (int i = 0; i < 0x20; i++)
+    //    {
+    //        ast.WriteByte((byte)i);
+    //    }
+
+    //    //case s9
+    //    tag = TdrTlv.MakeTag(11, TdrTlvType.ID_4_BYTE);
+    //    TdrBuffer.WriteVarUInt32(ast, tag);
+    //    ast.WriteInt32(0x20 * 4, Endianness.Big); // size, max 0x20*4
+    //    for (int i = 0; i < 0x20; i++)
+    //    {
+    //        ast.WriteInt32(i, Endianness.Big);
+    //    }
+
+            int subEntryEndPos = ast.Position;
+            int subEntrySize = ast.Position - subEntryStartPos - 4;
+            ast.Position = subEntryStartPos;
+            ast.WriteInt32(subEntrySize, Endianness.Big); // size
+            ast.Position = subEntryEndPos;
+            // end sub entry
         }
-        else if (chatMessage.Message == "sync")
-        {
-            List<AttrSync> attrs = Server.CharacterManager.GetAllAttrSync(_client, _client.Character);
-            List<List<AttrSync>> attrChunks = Util.Chunk(attrs, CsProtoConstant.CS_ATTR_SYNC_LIST_MAX);
 
-            foreach (List<AttrSync> attrChunk in attrChunks)
-            {
-                if (attrChunk.Count > CsProtoConstant.CS_ATTR_SYNC_LIST_MAX)
-                {
-                    Logger.Error(_client, "Chunk error");
-                }
 
-                CsProtoStructurePacket<AttrSyncList> attrSyncList = CsProtoResponse.AttrSyncList;
-                for (int i = 0; i < attrChunk.Count; i++)
-                {
-                    attrSyncList.Structure.Attr.Add(attrChunk[i]);
-                }
+        int subEndPos = ast.Position;
+        int subSize = ast.Position - subStartPos - 4;
+        ast.Position = subStartPos;
+        ast.WriteInt32(subSize, Endianness.Big); // size
+        ast.Position = subEndPos;
+        // end sub structure
 
-                _client.SendCsProtoStructurePacket(attrSyncList);
-            }
-        }
-        else if (chatMessage.Message == "town_init")
-        {
-            CsProtoStructurePacket<TownInstanceVerifyRsp> townServerInitNtf = CsProtoResponse.TownServerInitNtf;
-            TownInstanceVerifyRsp verifyRsp = townServerInitNtf.Structure;
-            verifyRsp.ErrNo = 0;
-            verifyRsp.LineId = 0;
-            verifyRsp.LevelEnterType = 0;
+        // case 3
+        tag = TdrTlv.MakeTag(3, TdrTlvType.ID_2_BYTE);
+        TdrBuffer.WriteVarUInt32(ast, tag);
+        ast.WriteInt16(0, Endianness.Big);
 
-            InstanceInitInfo instanceInitInfo = verifyRsp.InstanceInitInfo;
-            instanceInitInfo.BattleGroundId = 0;
-            instanceInitInfo.LevelId = 150301;
-            instanceInitInfo.CreateMaxPlayerCount = 4;
-            instanceInitInfo.GameMode = GameMode.Town;
-            instanceInitInfo.TimeType = TimeType.Noon;
-            instanceInitInfo.WeatherType = WeatherType.Sunny;
-            instanceInitInfo.Time = 1;
-            instanceInitInfo.LevelRandSeed = 1;
-            instanceInitInfo.WarningFlag = 0;
-            instanceInitInfo.CreatePlayerMaxLv = 99;
 
-            _client.SendCsProtoStructurePacket(townServerInitNtf);
-            prevLevelId = levelId;
-            levelId = instanceInitInfo.LevelId;
-        }
-        else if (chatMessage.Message == "tp")
-        {
-
-            CsProtoStructurePacket<PlayerTeleport> PlayerTeleport = CsProtoResponse.PlayerTeleport;
-            PlayerTeleport.Structure.SyncTime = 1;
-            PlayerTeleport.Structure.NetObjId = _client.Character.Id;
-            PlayerTeleport.Structure.Region = 180201; // 180201 = meze
-            PlayerTeleport.Structure.TargetPos = new CSQuatT()
-            {
-                q = new CSQuat()
-                {
-                    v = new CSVec3()
-                    {
-                        x = 10,
-                        y = 10,
-                        z = 10
-                    },
-                    w = 10
-                },
-                t = new CSVec3()
-                {
-                    x = 1169.375f,
-                    y = 1186.6145f,
-                    z = 32.703117f
-                }
-            };
-            PlayerTeleport.Structure.ParentGuid = 1;
-            PlayerTeleport.Structure.InitState = 1;
-            _client.SendCsProtoStructurePacket(PlayerTeleport);
-        }
+        int size = ast.Position - sizePos + 1;
+        ast.Position = sizePos;
+        ast.WriteInt32(size, Endianness.Big); // size
+        return ast.GetAllBytes();
     }
 
     public void SendBruteForceT()

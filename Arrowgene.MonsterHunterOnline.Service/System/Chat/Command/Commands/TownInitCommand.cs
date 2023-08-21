@@ -1,35 +1,21 @@
-﻿using Arrowgene.Logging;
+using System.Collections.Generic;
 using Arrowgene.MonsterHunterOnline.Service.CsProto.Constant;
 using Arrowgene.MonsterHunterOnline.Service.CsProto.Core;
-using Arrowgene.MonsterHunterOnline.Service.CsProto.Enums;
 using Arrowgene.MonsterHunterOnline.Service.CsProto.Structures;
-using Arrowgene.MonsterHunterOnline.Service.System;
 
-namespace Arrowgene.MonsterHunterOnline.Service.CsProto.Handler;
-
-public class EnterLevelNtfHandler : CsProtoStructureHandler<EnterLevelNtf>
+namespace Arrowgene.MonsterHunterOnline.Service.System.Chat.Command.Commands
 {
-    private static readonly ServiceLogger Logger =
-        LogProvider.Logger<ServiceLogger>(typeof(EnterLevelNtfHandler));
-
-    public override CS_CMD_ID Cmd => CS_CMD_ID.CS_CMD_ENTER_LEVEL_NTF;
-
-    private readonly CharacterManager _characterManager;
-
-    public EnterLevelNtfHandler(CharacterManager characterManager)
+    /// <summary>
+    /// Sends CS_CMD_TOWN_SERVER_INIT_NTF packet
+    /// </summary>
+    public class TownInitCommand : ChatCommand
     {
-        _characterManager = characterManager;
-    }
+        public override AccountType Account => AccountType.User;
+        public override string Key => "town_init";
+        public override string HelpText => "usage: `/town_init` - Sends CS_CMD_TOWN_SERVER_INIT_NTF packet";
 
-    public override void Handle(Client client, EnterLevelNtf req)
-    {
-        _characterManager.SyncAllAttr(client);
-
-        if (!client.Character.IsSync)
+        public override void Execute(string[] command, Client client, ChatMessage message, List<ChatMessage> responses)
         {
-            
-
-            // TODO hack to get visuals working
             CsProtoStructurePacket<TownInstanceVerifyRsp> townServerInitNtf = CsProtoResponse.TownServerInitNtf;
             TownInstanceVerifyRsp verifyRsp = townServerInitNtf.Structure;
             verifyRsp.ErrNo = 0;
@@ -38,10 +24,10 @@ public class EnterLevelNtfHandler : CsProtoStructureHandler<EnterLevelNtf>
 
             InstanceInitInfo instanceInitInfo = verifyRsp.InstanceInitInfo;
             instanceInitInfo.BattleGroundId = 0;
-            //instanceInitInfo.LevelId = 150301;
-            instanceInitInfo.LevelId = client.State.InitLevelId;
+            instanceInitInfo.LevelId = client.State.levelId;
             instanceInitInfo.CreateMaxPlayerCount = 4;
             instanceInitInfo.GameMode = GameMode.Town;
+            instanceInitInfo.GameMode = GameMode.Story;
             instanceInitInfo.TimeType = TimeType.Noon;
             instanceInitInfo.WeatherType = WeatherType.Sunny;
             instanceInitInfo.Time = 1;
@@ -50,7 +36,8 @@ public class EnterLevelNtfHandler : CsProtoStructureHandler<EnterLevelNtf>
             instanceInitInfo.CreatePlayerMaxLv = 99;
 
             client.SendCsProtoStructurePacket(townServerInitNtf);
-            client.Character.IsSync = true;
+
+            // TODO, perhaps refactor to a change level method somewhere to handle
             client.State.prevLevelId = client.State.levelId;
             client.State.levelId = instanceInitInfo.LevelId;
         }
